@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include "config.h"
+#include <processgroup/processgroup.h>
 
 #ifdef HAVE_SYS_PRCTL_H
   #include <sys/prctl.h>
@@ -362,6 +363,10 @@ main (int argc, char **argv)
                 worker_init();
                 alarm (timeout);
                 usleep (backoff);
+                out (stdout, "create memcg for uid pid: %i %i\n", getuid(), getpid());
+                retval = createProcessGroup(getuid(), getpid(), true);
+                if (retval > 0)
+                    err (stderr, "could not create memcg: %s\n", strerror (errno));
                 if (do_dryrun)
                     exit (0);
                 exit (hogvm (do_vm_bytes, do_vm_stride, do_vm_hang, do_vm_keep, do_vm_spin));

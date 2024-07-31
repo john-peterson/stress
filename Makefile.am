@@ -1,4 +1,4 @@
-SUBDIRS = src test
+SUBDIRS = src test lmkd
 
 man_MANS = man/stress.1
 

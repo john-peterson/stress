@@ -6,6 +6,7 @@ AM_INIT_AUTOMAKE
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 
@@ -13,9 +14,15 @@ AC_PROG_MAKE_SET
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h sys/prctl.h])
 
 # Checks for library functions.
+AC_PROG_RANLIB
 AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([alarm sqrt strerror])
+
+# Compiler options 
+CPPFLAGS="-Wfatal-errors -x c++ $CPPFLAGS"
+CPPFLAGS="-Ilmkd/include Icore/libcutils/include -Icore/libprocessgroup/include $CPPFLAGS"
+LDFLAGS="-lprocessgroup -lcutils $LDFLAGS"
 
 # Special functions
 AC_ARG_ENABLE([static],
@@ -34,5 +41,6 @@ fi
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
-                 test/Makefile])
+                 test/Makefile
+lmkd/Makefile])
 AC_OUTPUT

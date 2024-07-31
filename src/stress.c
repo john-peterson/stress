@@ -32,6 +32,8 @@
 #include <sys/wait.h>
 #include "config.h"
 #include <processgroup/processgroup.h>
+#include <lmkd.h>
+#include <liblmkd_utils.h>
 
 #ifdef HAVE_SYS_PRCTL_H
   #include <sys/prctl.h>
@@ -83,6 +85,23 @@ int hogio (void);
 int hogvm (long long bytes, long long stride, long long hang, int keep, int spin);
 int hoghdd (long long bytes);
 
+void lmk(int pid){
+struct lmk_procprio params;
+            params.pid = pid;
+            params.uid = getuid();
+            params.oomadj = 1000;
+            params.ptype = PROC_TYPE_APP;
+            int retval = lmkd_connect();
+            out (stderr,  "connect with lmkd: %i %s\n", retval, strerror(errno));
+            retval = lmkd_register_proc(retval, &params);
+            out (stderr,  "Register with lmkd: %i %s\n", retval, strerror(errno));
+}
+
+void memcg(){
+	int retval = createProcessGroup(getuid(), getpid(), true);
+     out(stdout, "create memcg: %i %s\n", retval, strerror (errno));
+}
+	
 int
 main (int argc, char **argv)
 {
@@ -362,11 +381,9 @@ main (int argc, char **argv)
             case 0:            /* child */
                 worker_init();
                 alarm (timeout);
-                usleep (backoff);
-                out (stdout, "create memcg for uid pid: %i %i\n", getuid(), getpid());
-                retval = createProcessGroup(getuid(), getpid(), true);
-                if (retval > 0)
-                    err (stderr, "could not create memcg: %s\n", strerror (errno));
+                usleep (backoff);                   
+          //      lmk(getpid());
+                memcg();
                 if (do_dryrun)
                     exit (0);
                 exit (hogvm (do_vm_bytes, do_vm_stride, do_vm_hang, do_vm_keep, do_vm_spin));
@@ -376,6 +393,7 @@ main (int argc, char **argv)
             default:           /* parent */
                 dbg (stdout, "--> hogvm worker %lli [%i] forked\n", do_vm, pid);
                 ++children;
+                lmk(pid);
             }
             --do_vm;
         }
